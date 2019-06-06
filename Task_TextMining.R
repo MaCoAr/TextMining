@@ -66,25 +66,26 @@ Obs_Corpus <- Corpus(VectorSource(Observaciones))
 
 #### Crear nube de palabras ####
 
-# Se mapea el Corpus como documento de texto plano usuando la funcion tm_map
-Obs_mapeo <- tm_map(Obs_Corpus, PlainTextDocument)
-
-# Crear la nube de palabras con el objeto mapeado
-wordcloud(Obs_mapeo$content$content, max.words = 50, random.order = F, colors = brewer.pal(name = "Dark2", n = 8))
-
-# Se continua con la depuración, se pueden econtrar palabras que no son de interes en el análisis
-# Utilizar la funcion removeWords() indicando en el parametro "words = " que palabras se quieren eliminar de nuestro corpus o documento
+# Paralabras a remover de las observaciones medicas
 palabras_a_remover <- c("años", "hace", "tto", "tratamiento", "control", "remito", "hoy", "ultimo", "ademas", "edad", "medico", "valoracion", 
                         "solicita", "remite", "manejo","meses", "buena","mas", "dia","año","requiere","cita","toma","refiere","presenta","2015",
                         "normal","examenes","examen","metas","pte","dias","medicamentos","bien","urgencias","medicina","cifras","med","medicina",
-                        "xxxx","igual","trae","mes","solicito","paciente","interna")
-Observaciones <- removeWords(Observaciones, words = palabras_a_remover )
+                        "xxxx","igual","trae","mes","solicito","paciente","interna","habitos","tel","consultas","consulta","orden","remision",
+                        "tolera","	ahora","consultado","dice","	niega","	especialista","especialistas","tipo","	cada","pendiente","cuadro",
+                        "evolucion","sintomas","orden","cada","ahora","tipo","dice","viene","atencion","tel")
 
-# Se realiza un nuevo mapero del corpus o documento
+# Se mapea el Corpus como documento de texto plano usuando la funcion tm_map
+Obs_mapeo <- tm_map(Obs_Corpus, PlainTextDocument)
+
+# Se continua con la depuración, se pueden econtrar palabras que no son de interes en el análisis
+# Utilizar la funcion removeWords() indicando en el parametro "words = " que palabras se quieren eliminar de nuestro corpus o documento
+Observaciones <- removeWords(Observaciones, words = palabras_a_remover)
+
+# Se realiza un nuevo mapeo del corpus o documento
 Obs_Corpus <- Observaciones %>% VectorSource() %>% Corpus()
 Obs_mapeo <- Obs_Corpus %>% tm_map(PlainTextDocument)
 
-# Se grafica de nuevo la nube
+# Se grafica de la nube de palabras
 wordcloud(Obs_mapeo$content$content, 
           max.words = 50, 
           random.order = F, 
@@ -94,16 +95,43 @@ wordcloud(Obs_mapeo$content$content,
 
 # Identificar estadisticas básicas entre palabras
 obs_tdm <- TermDocumentMatrix(Obs_Corpus)
-obs_tdm
 
+# Eliminar terminos dispersos 
+obs_nuevo <- removeSparseTerms(obs_tdm, sparse = 0.95)
+obs_tdm
+obs_nuevo
+
+# Crear matriz
 # Transformar la TDM en una matriz estandar
-gc(reset = TRUE)
-obs_matriz <- as.matrix(obs_tdm[["dimnames"]])
-dim(obs_matriz)
+obs_nuevo <- obs_nuevo %>% as.matrix()
+dim(obs_nuevo)
 
 # Obtener las sumas de los renglones (rowSums) ordenadas de mayor a menor
-obs_matriz <- obs_matriz %>% rowSums() %>% sort(decreasing = TRUE)
+obs_matriz <- obs_nuevo %>% rowSums() %>% sort(decreasing = TRUE)
 obs_matriz <- data.frame(palabra = names(obs_matriz), frec = obs_matriz)
 
 # Con este objeto (data frame) tambien se puede crear una nube de palabras
-wordcloud(words = obs_matriz$palabra, freq = obs_matriz$frec, max.words = 50, random.order = F, colors = brewer.pal(name = "Dark2", n = 8))
+# wordcloud(words = obs_matriz$palabra, freq = obs_matriz$frec, max.words = 50, random.order = F, colors = brewer.pal(name = "Dark2", n = 8))
+
+#### Graficos de Frecuencias ####
+obs_matriz[1:10,] %>% 
+  ggplot(aes(palabra, frec)) +
+  geom_bar(stat = "identity", color = "black", fill = "#87CEFA") +
+  geom_text(aes(hjust = 1.3, label = frec)) +
+  coord_flip() +
+  labs(title = "Diez palabras más frecuentes", x = "Palabras", y = "Número de uso")
+
+
+#Se obtiene una estandarización por renglones
+obs_nuevo <- obs_nuevo / rowSums(obs_nuevo)
+
+# Se obtiene una matriz de distancia, con el método de distancias euclidianas
+obs_distancia <- dist(obs_nuevo, method = "euclidian")
+
+#### Agrupapientos Jerárquicos ####
+
+# Se usa el método de Ward (Ward.D), que es el método por defecto de la función hclust
+obs_hclust <- hclust(obs_distancia, method = "ward.D")
+
+# Ahora graficar
+plot(obs_hclust, main = "Dendrograma de Niebla - hclust", sub = "", xlab = "")
