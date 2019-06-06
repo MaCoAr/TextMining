@@ -1,7 +1,3 @@
-#### URLS de ayuda ####
-# https://stackoverflow.com/questions/5171593/r-memory-management-cannot-allocate-vector-of-size-n-mb
-# https://community.rstudio.com/t/error-cannot-allocate-vector-of-size-76-4-gb/10615/3
-
 #### Instalar y Cargar Paquetes a ser utilizados en mineria de texto ####
 # Instalar Paquetes
 install.packages('NLP', dependencies=TRUE, repos='http://cran.rstudio.com/')  # Es dependencia del paquete TM
@@ -27,16 +23,6 @@ library(SnowballC)
 
 #### Cargar el archivo a realizarle Text Minig ####
 Archivo_OAM <- read_lines(file.choose())
-
-#Estructura del libro
-str(Archivo_OAM)
-# 
-# dim(Archivo_OAM)
-# texto_OAM <- as.matrix()
-# texto_OAM <- Archivo_OAM %>% select(Archivo_OAM) %>% as.matrix
-# dim(texto)
-
-# estructura_OAM <- Archivo_OAM %>% data.frame()
 
 #### Limpiar el archivo de observaciones (Limpieza de Texto) ####
 
@@ -110,9 +96,6 @@ dim(obs_nuevo)
 obs_matriz <- obs_nuevo %>% rowSums() %>% sort(decreasing = TRUE)
 obs_matriz <- data.frame(palabra = names(obs_matriz), frec = obs_matriz)
 
-# Con este objeto (data frame) tambien se puede crear una nube de palabras
-# wordcloud(words = obs_matriz$palabra, freq = obs_matriz$frec, max.words = 50, random.order = F, colors = brewer.pal(name = "Dark2", n = 8))
-
 #### Graficos de Frecuencias ####
 obs_matriz[1:10,] %>% 
   ggplot(aes(palabra, frec)) +
@@ -120,7 +103,6 @@ obs_matriz[1:10,] %>%
   geom_text(aes(hjust = 1.3, label = frec)) +
   coord_flip() +
   labs(title = "Diez palabras más frecuentes", x = "Palabras", y = "Número de uso")
-
 
 #Se obtiene una estandarización por renglones
 obs_nuevo <- obs_nuevo / rowSums(obs_nuevo)
